@@ -7,6 +7,7 @@ pub struct PicoRing<T, const N: usize = 0> {
     head: usize,     // write position (measured in items of type T)
     tail: usize,     // read position
     capacity: usize, // how many items of type T fit (physical capacity)
+    mask: usize,     // capacity - 1 if it's a power of two, otherwise 0
     _marker: PhantomData<T>,
 }
 
@@ -35,12 +36,18 @@ impl<T, const N: usize> PicoRing<T, N> {
 
         let buffer = MirrorBuffer::new(total_bytes)?;
         let actual_capacity = buffer.size() / item_size;
+        let mask = if actual_capacity > 0 && (actual_capacity & (actual_capacity - 1)) == 0 {
+            actual_capacity - 1
+        } else {
+            0
+        };
 
         Ok(Self {
             buffer,
             head: 0,
             tail: 0,
             capacity: actual_capacity,
+            mask,
             _marker: PhantomData,
         })
     }
@@ -54,6 +61,15 @@ impl<T> PicoRing<T, 0> {
 }
 
 impl<T, const N: usize> PicoRing<T, N> {
+    #[inline(always)]
+    fn wrap(&self, val: usize) -> usize {
+        if self.mask != 0 {
+            val & self.mask
+        } else {
+            val % self.capacity
+        }
+    }
+
     #[inline]
     pub fn push(&mut self, item: T) -> bool {
         if self.is_full() {
@@ -67,7 +83,7 @@ impl<T, const N: usize> PicoRing<T, N> {
         }
 
         // update index and wrap around based on capacity
-        self.head = (self.head + 1) % self.capacity;
+        self.head = self.wrap(self.head + 1);
         true
     }
 
@@ -82,13 +98,13 @@ impl<T, const N: usize> PicoRing<T, N> {
             ptr::read(ptr)
         };
 
-        self.tail = (self.tail + 1) % self.capacity;
+        self.tail = self.wrap(self.tail + 1);
         Option::Some(item)
     }
 
     #[inline]
     pub fn is_full(&self) -> bool {
-        ((self.head + 1) % self.capacity) == self.tail
+        self.wrap(self.head + 1) == self.tail
     }
 
     #[inline]
@@ -139,12 +155,9 @@ impl<T, const N: usize> PicoRing<T, N> {
     }
 
     // returns how many items are currently in the ring buffer
+    #[inline]
     pub fn len(&self) -> usize {
-        if self.head >= self.tail {
-            self.head - self.tail
-        } else {
-            self.capacity - (self.tail - self.head)
-        }
+        self.wrap(self.head + self.capacity - self.tail)
     }
 
     // returns the physical capacity of the ring buffer
@@ -171,13 +184,13 @@ impl<T, const N: usize> PicoRing<T, N> {
     // manually advance the write pointer
     #[inline]
     pub fn advance_head(&mut self, n: usize) {
-        self.head = (self.head + n) % self.capacity;
+        self.head = self.wrap(self.head + n);
     }
 
     // manually advance the read pointer
     #[inline]
     pub fn advance_tail(&mut self, n: usize) {
-        self.tail = (self.tail + n) % self.capacity;
+        self.tail = self.wrap(self.tail + n);
     }
 
     #[inline]
@@ -204,7 +217,7 @@ impl<T: Copy, const N: usize> PicoRing<T, N> {
             ptr::copy_nonoverlapping(data.as_ptr(), dest_ptr, n);
         }
 
-        self.head = (self.head + n) % self.capacity;
+        self.head = self.wrap(self.head + n);
         true
     }
 }

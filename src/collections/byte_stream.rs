@@ -7,7 +7,7 @@ pub struct PicoByteStream<const N: usize = 0> {
 }
 
 impl<const N: usize> PicoByteStream<N> {
-    /// Creates a new PicoByteStream with a capacity determined by the const generic N.
+    // creates a new PicoByteStream with a capacity determined by the const generic N.
     pub fn new_static() -> Result<Self, String> {
         Ok(Self {
             ring: PicoRing::new()?,
@@ -16,7 +16,7 @@ impl<const N: usize> PicoByteStream<N> {
 }
 
 impl PicoByteStream<0> {
-    /// Creates a new byte stream with specified capacity
+    // creates a new byte stream with specified capacity
     pub fn new(capacity: usize) -> Result<Self, String> {
         Ok(Self {
             ring: PicoRing::with_capacity(capacity)?,
