@@ -1,6 +1,6 @@
 [package]
 name = "picoring"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 description = "High-performance, zero-copy circular buffer for Rust using hardware memory mirroring."
 license = "MIT OR Apache-2.0"

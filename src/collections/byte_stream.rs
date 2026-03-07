@@ -99,4 +99,58 @@ impl<const N: usize> PicoByteStream<N> {
     pub fn produce(&mut self, n: usize) {
         self.ring.advance_head(n);
     }
+
+    // returns an iterator over the available bytes
+    #[inline]
+    pub fn iter(&self) -> core::slice::Iter<'_, u8> {
+        self.as_read_slice().iter()
+    }
+
+    // returns a mutable iterator over the available bytes
+    #[inline]
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<'_, u8> {
+        unsafe {
+            let ptr = self.ring.as_mut_ptr().add(self.ring.tail());
+            core::slice::from_raw_parts_mut(ptr, self.ring.len()).iter_mut()
+        }
+    }
+}
+
+// -- Ergonomics: Indexing and Iteration --
+
+impl<const N: usize> core::ops::Index<usize> for PicoByteStream<N> {
+    type Output = u8;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.as_read_slice()[index]
+    }
+}
+
+impl<const N: usize> core::ops::IndexMut<usize> for PicoByteStream<N> {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        unsafe {
+            let ptr = self.ring.as_mut_ptr().add(self.ring.tail());
+            let slice = core::slice::from_raw_parts_mut(ptr, self.ring.len());
+            &mut slice[index]
+        }
+    }
+}
+
+impl<'a, const N: usize> IntoIterator for &'a PicoByteStream<N> {
+    type Item = &'a u8;
+    type IntoIter = core::slice::Iter<'a, u8>;
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, const N: usize> IntoIterator for &'a mut PicoByteStream<N> {
+    type Item = &'a mut u8;
+    type IntoIter = core::slice::IterMut<'a, u8>;
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
 }

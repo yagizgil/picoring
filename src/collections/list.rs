@@ -115,6 +115,36 @@ impl<T, const N: usize> PicoList<T, N> {
         }
     }
 
+    // sets the value at the specified index.
+    // returns true if successful, false if index is out of bounds.
+    #[inline]
+    pub fn set(&mut self, index: usize, value: T) -> bool {
+        if let Some(target) = self.get_mut(index) {
+            *target = value;
+            true
+        } else {
+            false
+        }
+    }
+
+    // returns an iterator over the list.
+    #[inline]
+    pub fn iter(&self) -> Iter<'_, T, N> {
+        Iter {
+            list: self,
+            index: 0,
+        }
+    }
+
+    // returns a mutable iterator over the list.
+    #[inline]
+    pub fn iter_mut(&mut self) -> IterMut<'_, T, N> {
+        IterMut {
+            list: self,
+            index: 0,
+        }
+    }
+
     // returns the number of chunks currently allocated.
     #[inline]
     pub fn chunk_count(&self) -> usize {
@@ -154,5 +184,86 @@ impl<T: Copy, const N: usize> PicoList<T, N> {
 impl<T, const N: usize> Default for PicoList<T, N> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<T, const N: usize> core::ops::Index<usize> for PicoList<T, N> {
+    type Output = T;
+
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        self.get(index).expect("PicoList index out of bounds")
+    }
+}
+
+impl<T, const N: usize> core::ops::IndexMut<usize> for PicoList<T, N> {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.get_mut(index).expect("PicoList index out of bounds")
+    }
+}
+
+pub struct Iter<'a, T, const N: usize> {
+    list: &'a PicoList<T, N>,
+    index: usize,
+}
+
+impl<'a, T, const N: usize> Iterator for Iter<'a, T, N> {
+    type Item = &'a T;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.list.len() {
+            let item = unsafe { self.list.get_unchecked(self.index) };
+            self.index += 1;
+            Some(item)
+        } else {
+            None
+        }
+    }
+}
+
+pub struct IterMut<'a, T, const N: usize> {
+    list: &'a mut PicoList<T, N>,
+    index: usize,
+}
+
+impl<'a, T, const N: usize> Iterator for IterMut<'a, T, N> {
+    type Item = &'a mut T;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.list.len() {
+            // we use unsafe to convince the borrow checker that we aren't
+            // yielding multiple mutable references to the same data.
+            // safety: self.index is incremented each time.
+            unsafe {
+                let item = &mut *(self.list.get_unchecked_mut(self.index) as *mut T);
+                self.index += 1;
+                Some(item)
+            }
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a, T, const N: usize> IntoIterator for &'a PicoList<T, N> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T, N>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, T, const N: usize> IntoIterator for &'a mut PicoList<T, N> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T, N>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }

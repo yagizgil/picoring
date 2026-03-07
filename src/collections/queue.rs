@@ -70,6 +70,22 @@ impl<T, const N: usize> PicoQueue<T, N> {
         let n = len.min(self.len());
         self.ring.advance_tail(n);
     }
+
+    // returns an iterator over the readable items
+    #[inline]
+    pub fn iter(&self) -> core::slice::Iter<'_, T> {
+        self.peek().iter()
+    }
+
+    // returns a mutable iterator over the readable items
+    #[inline]
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<'_, T> {
+        // since we have hardware mirroring, readable_slice can be mutable too
+        unsafe {
+            let ptr = self.ring.as_mut_ptr().add(self.ring.tail());
+            core::slice::from_raw_parts_mut(ptr, self.len()).iter_mut()
+        }
+    }
 }
 
 // support for single item access without slices
@@ -91,5 +107,44 @@ impl<T: Copy> From<Vec<T>> for PicoQueue<T> {
         Self {
             ring: PicoRing::from(v),
         }
+    }
+}
+
+// -- Ergonomics: Indexing and Iteration --
+
+impl<T, const N: usize> core::ops::Index<usize> for PicoQueue<T, N> {
+    type Output = T;
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.peek()[index]
+    }
+}
+
+impl<T, const N: usize> core::ops::IndexMut<usize> for PicoQueue<T, N> {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        unsafe {
+            let ptr = self.ring.as_mut_ptr().add(self.ring.tail());
+            let slice = core::slice::from_raw_parts_mut(ptr, self.len());
+            &mut slice[index]
+        }
+    }
+}
+
+impl<'a, T, const N: usize> IntoIterator for &'a PicoQueue<T, N> {
+    type Item = &'a T;
+    type IntoIter = core::slice::Iter<'a, T>;
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, T, const N: usize> IntoIterator for &'a mut PicoQueue<T, N> {
+    type Item = &'a mut T;
+    type IntoIter = core::slice::IterMut<'a, T>;
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }

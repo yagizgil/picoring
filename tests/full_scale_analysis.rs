@@ -28,16 +28,16 @@ fn get_rss_bytes(sys: &mut System) -> u64 {
 }
 
 #[test]
-fn rust_collections_ultimate_war() {
+fn rust_collections_scale_analysis() {
     let mut sys = System::new();
     let baseline_init = get_rss_bytes(&mut sys);
 
-    // --- TABLE 1: MEGA WAR (500M items / 3.7 GB) ---
+    // --- TABLE 1: HIGH-CAPACITY BENCHMARK (500M items / 3.7 GB) ---
     let mega_items = 500_000_000;
     let expected_raw_mega = mega_items as u64 * 8;
 
     println!(
-        "\n--- RUST COLLECTIONS MEGA WAR ({} per Collection) ---",
+        "\n--- HIGH-CAPACITY COLLECTION BENCHMARK ({} per Collection) ---",
         format_bytes(expected_raw_mega)
     );
     println!("{:-<145}", "");
@@ -176,18 +176,7 @@ fn rust_collections_ultimate_war() {
     );
     println!("{:-<145}", "");
 
-    // --- SECTION: 1GB, 2GB, 3GB, 4GB SENSITIVITY ---
-    let chunk_configs = [
-        (128, "1 KB"),
-        (1024, "8 KB"),
-        (8192, "64 KB"),
-        (32768, "256 KB"),
-        (65536, "512 KB"),
-        (131072, "1 MB"),
-        (262144, "2 MB"),
-        (655360, "5 MB"),
-        (2097152, "16 MB"),
-    ];
+    // --- SECTION: PARAMETER SENSITIVITY ANALYSIS (1GB TO 4GB) ---
 
     let scales = [
         ("1 GB", 125_000_000),
