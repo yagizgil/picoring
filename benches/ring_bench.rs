@@ -1,20 +1,20 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use picoring::{PicoByteStream, PicoQueue, PicoRing};
 use std::io::{Read, Write};
 
 fn bench_read_performance(c: &mut Criterion) {
     let mut group = c.benchmark_group("Read Performance (Zero-Copy)");
     let capacity = 100 * 1024 * 1024; // 100MB
-    
-    let mut ring = PicoRing::<u8>::new(capacity).unwrap();
+
+    let mut ring = PicoRing::<u8>::with_capacity(capacity).unwrap();
     let mut classic_vec = vec![0u8; capacity];
-    
+
     let test_sizes = [64, 4096, 65536, 1048576]; // 64B, 4KB, 64KB, 1MB
 
     for size in test_sizes {
         let data = vec![42u8; size];
         ring.push_slice(&data);
-        
+
         // Pico Performance
         group.bench_with_input(BenchmarkId::new("PicoRing", size), &size, |b, &s| {
             b.iter(|| {
@@ -38,7 +38,7 @@ fn bench_read_performance(c: &mut Criterion) {
 fn bench_full_cycle(c: &mut Criterion) {
     let mut group = c.benchmark_group("Full Cycle (Write+Read)");
     let capacity = 100 * 1024 * 1024;
-    
+
     let mut pico_queue = PicoQueue::<u8>::new(capacity).unwrap();
     let mut classic_vec = vec![0u8; capacity];
     let mut classic_head = 0;
@@ -112,5 +112,10 @@ fn bench_collections(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_read_performance, bench_full_cycle, bench_collections);
+criterion_group!(
+    benches,
+    bench_read_performance,
+    bench_full_cycle,
+    bench_collections
+);
 criterion_main!(benches);

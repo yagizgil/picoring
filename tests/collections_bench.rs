@@ -26,7 +26,7 @@ fn print_row(label: &str, stream_ns: u128, queue_ns: u128, classic_ns: u128) {
 
 #[test]
 fn collection_performance_showdown() {
-    let capacity_bytes = 200 * 1024 * 1024; // 200 MB Capacity
+    let capacity_bytes = 600 * 1024 * 1024; // 600 MB Capacity (to handle 500MB tests)
 
     println!("\n--- COLLECTION PERFORMANCE SHOWDOWN ---");
     println!("Stream: std::io::Read/Write (Safe but Copying)");

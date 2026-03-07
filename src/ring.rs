@@ -2,7 +2,7 @@ use crate::buffer::MirrorBuffer;
 use core::marker::PhantomData;
 use core::{ptr, slice};
 
-pub struct PicoRing<T> {
+pub struct PicoRing<T, const N: usize = 0> {
     buffer: MirrorBuffer,
     head: usize,     // write position (measured in items of type T)
     tail: usize,     // read position
@@ -10,22 +10,30 @@ pub struct PicoRing<T> {
     _marker: PhantomData<T>,
 }
 
-impl<T> PicoRing<T> {
-    pub fn new(capacity_count: usize) -> Result<Self, String> {
-        // calculate the size of T and create a MirrorBuffer aligned to page boundaries
-        let item_size = core::mem::size_of::<T>();
+impl<T, const N: usize> PicoRing<T, N> {
+    // creates a new PicoRing with a capacity determined by the const generic N.
+    // returns an error if N is 0 (use with_capacity instead).
+    pub fn new() -> Result<Self, String> {
+        if N == 0 {
+            return Err(
+                "Cannot use new() without a const generic size. Use with_capacity(size) instead."
+                    .into(),
+            );
+        }
+        Self::create(N)
+    }
 
-        // protect against Zero Sized Types (ZST) to avoid division by zero
+    // internal helper
+    fn create(capacity_count: usize) -> Result<Self, String> {
+        let item_size = core::mem::size_of::<T>();
         if item_size == 0 {
             return Err("Zero sized types are not supported in PicoRing".into());
         }
-
         let total_bytes = capacity_count
             .checked_mul(item_size)
             .ok_or_else(|| "Requested capacity is too large (overflow)".to_string())?;
 
         let buffer = MirrorBuffer::new(total_bytes)?;
-        // update capacity based on the actual physical size (which may have been rounded up)
         let actual_capacity = buffer.size() / item_size;
 
         Ok(Self {
@@ -36,7 +44,16 @@ impl<T> PicoRing<T> {
             _marker: PhantomData,
         })
     }
+}
 
+impl<T> PicoRing<T, 0> {
+    // creates a new PicoRing with a dynamic capacity.
+    pub fn with_capacity(capacity_count: usize) -> Result<Self, String> {
+        Self::create(capacity_count)
+    }
+}
+
+impl<T, const N: usize> PicoRing<T, N> {
     #[inline]
     pub fn push(&mut self, item: T) -> bool {
         if self.is_full() {
@@ -172,7 +189,7 @@ impl<T> PicoRing<T> {
         }
     }
 }
-impl<T: Copy> PicoRing<T> {
+impl<T: Copy, const N: usize> PicoRing<T, N> {
     // pushes multiple items at once using hardware mirroring
     #[inline]
     pub fn push_slice(&mut self, data: &[T]) -> bool {
@@ -195,7 +212,8 @@ impl<T: Copy> PicoRing<T> {
 // Support converting from standard Vec
 impl<T: Copy> From<Vec<T>> for PicoRing<T> {
     fn from(v: Vec<T>) -> Self {
-        let mut ring = PicoRing::new(v.len() + 1).expect("Failed to convert Vec to PicoRing");
+        let mut ring =
+            PicoRing::with_capacity(v.len() + 1).expect("Failed to convert Vec to PicoRing");
         ring.push_slice(&v);
         ring
     }

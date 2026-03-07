@@ -33,7 +33,7 @@ fn test_hardware_mirroring() {
 
 #[test]
 fn test_pico_ring_basic_logic() {
-    let mut ring = PicoRing::<u32>::new(10).expect("Failed to create PicoRing");
+    let mut ring = PicoRing::<u32>::with_capacity(10).expect("Failed to create PicoRing");
 
     // Test initial state
     assert!(ring.is_empty());
@@ -60,7 +60,7 @@ fn test_pico_ring_basic_logic() {
 
 #[test]
 fn test_pico_ring_wrap_around_with_mirroring() {
-    let mut ring = PicoRing::<u8>::new(4096).expect("Failed to create PicoRing");
+    let mut ring = PicoRing::<u8>::with_capacity(4096).expect("Failed to create PicoRing");
 
     // Fill up to the end
     for _ in 0..4095 {
@@ -85,4 +85,14 @@ fn test_pico_ring_wrap_around_with_mirroring() {
     assert_eq!(ring.pop(), Some(3));
     assert_eq!(ring.pop(), Some(4));
     assert_eq!(ring.pop(), Some(5));
+}
+
+#[test]
+fn test_pico_ring_static_capacity() {
+    // Test the new PicoRing::<u8, 8192>::new() syntax
+    let mut ring = PicoRing::<u8, 4096>::new().expect("Failed to create static PicoRing");
+    assert_eq!(ring.capacity(), 4096);
+
+    ring.push(10);
+    assert_eq!(ring.pop(), Some(10));
 }

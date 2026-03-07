@@ -2,18 +2,29 @@ use crate::ring::PicoRing;
 
 // A high-performance, std-independent queue that focuses on
 // reservation-based zero-copy operations.
-pub struct PicoQueue<T> {
-    ring: PicoRing<T>,
+pub struct PicoQueue<T, const N: usize = 0> {
+    ring: PicoRing<T, N>,
 }
 
-impl<T> PicoQueue<T> {
-    // create a new queue with specified capacity (in items of type T)
-    pub fn new(capacity: usize) -> Result<Self, String> {
+impl<T, const N: usize> PicoQueue<T, N> {
+    // creates a new PicoQueue with a capacity determined by the const generic N.
+    pub fn new_static() -> Result<Self, String> {
         Ok(Self {
-            ring: PicoRing::new(capacity)?,
+            ring: PicoRing::new()?,
         })
     }
+}
 
+impl<T> PicoQueue<T, 0> {
+    // creates a new PicoQueue with a specified dynamic capacity.
+    pub fn new(capacity: usize) -> Result<Self, String> {
+        Ok(Self {
+            ring: PicoRing::with_capacity(capacity)?,
+        })
+    }
+}
+
+impl<T, const N: usize> PicoQueue<T, N> {
     // returns how many items are currently in the queue
     #[inline]
     pub fn len(&self) -> usize {
@@ -61,8 +72,8 @@ impl<T> PicoQueue<T> {
     }
 }
 
-// Support for single item access without slices
-impl<T: Copy> PicoQueue<T> {
+// support for single item access without slices
+impl<T: Copy, const N: usize> PicoQueue<T, N> {
     #[inline]
     pub fn try_push(&mut self, item: T) -> bool {
         self.ring.push(item)
@@ -74,7 +85,7 @@ impl<T: Copy> PicoQueue<T> {
     }
 }
 
-// Global conversion for PicoQueue
+// global conversion for PicoQueue
 impl<T: Copy> From<Vec<T>> for PicoQueue<T> {
     fn from(v: Vec<T>) -> Self {
         Self {

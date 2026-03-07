@@ -32,7 +32,8 @@ fn ultimate_performance_showdown() {
         "\nInitializing PicoRing and Classic buffers ({})...",
         format_size(capacity_bytes)
     );
-    let mut ring = PicoRing::<u8>::new(capacity_bytes).expect("Failed to create PicoRing");
+    let mut ring =
+        PicoRing::<u8>::with_capacity(capacity_bytes).expect("Failed to create PicoRing");
     let mut classic_vec = vec![0u8; capacity_bytes];
 
     let test_sizes = [

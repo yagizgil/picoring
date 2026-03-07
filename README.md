@@ -95,6 +95,97 @@ Comparison between high-level collections and classic manual wrap logic.
 | 50.0 MB   |   7412139   | **3109952** |   6349793    |   0.9x    | **2.0x** |
 | 100.0 MB  |  13433399   | **6754518** |   12942260   |   1.0x    | **1.9x** |
 
+### PicoList: Extreme Scale Performance
+
+PicoList is a dynamic, chunked collection designed to handle massive datasets (GBs) without the performance degradation of large reallocations.
+
+<details>
+<summary><b>View Ultimate War Results (3.7 GB / 500M Items)</b></summary>
+
+| Operation        |  PicoList  |    Vec     |  VecDeque  |  LinkedList  |   BTreeMap   |   HashMap    |
+| :--------------- | :--------: | :--------: | :--------: | :----------: | :----------: | :----------: |
+| **Pushing (ms)** |    3459    |    1874    |    1737    |    23500     |    44500     |    42500     |
+| **Access (us)**  |    158     |    147     |    183     |   > 1 WEEK   |   O(log N)   |     O(1)     |
+| **RAM Usage**    | **3.7 GB** | **3.7 GB** | **3.7 GB** | **15.2 GB!** | **17.4 GB!** | **16.5 GB!** |
+
+_Analysis: PicoList matches Vec in memory efficiency while providing near-native access speeds at massive scales._
+
+</details>
+
+<details>
+<summary><b>View 1 GB Sensitivity Data (125M Items)</b></summary>
+
+| N (Chunk Size)  | Push (ms) | Access (us) | Update (us) | RAM Usage |
+| :-------------- | :-------: | :---------: | :---------: | :-------: |
+| 128 (1 KB)      |   15028   |     43      |     323     |  3.8 GB   |
+| 1024 (8 KB)     |   2419    |     50      |     159     | 958.8 MB  |
+| 8192 (64 KB)    |   1070    |     31      |     133     | 953.8 MB  |
+| 32768 (256 KB)  |    885    |     49      |     109     | 954.5 MB  |
+| 65536 (512 KB)  |    859    |     32      |     134     | 953.8 MB  |
+| 131072 (1 MB)   |    864    |     31      |     114     | 953.2 MB  |
+| 262144 (2 MB)   |    861    |     32      |     105     | 953.3 MB  |
+| 655360 (5 MB)   |    895    |     40      |     104     | 953.7 MB  |
+| 2097152 (16 MB) |    854    |     32      |     122     | 953.7 MB  |
+| **Std Vec Ref** |    500    |    O(1)     |    O(1)     | 954.1 MB  |
+
+</details>
+
+<details>
+<summary><b>View 2 GB Sensitivity Data (250M Items)</b></summary>
+
+| N (Chunk Size)  | Push (ms) | Access (us) | Update (us) | RAM Usage |
+| :-------------- | :-------: | :---------: | :---------: | :-------: |
+| 128 (1 KB)      |   30292   |     56      |     319     |  7.5 GB   |
+| 1024 (8 KB)     |   5134    |     51      |     163     |  1.9 GB   |
+| 8192 (64 KB)    |   2138    |     50      |     168     |  1.9 GB   |
+| 32768 (256 KB)  |   1801    |     32      |     112     |  1.9 GB   |
+| 65536 (512 KB)  |   1805    |     48      |     136     |  1.9 GB   |
+| 131072 (1 MB)   |   1698    |     67      |     225     |  1.9 GB   |
+| 262144 (2 MB)   |   1694    |     31      |     125     |  1.9 GB   |
+| 655360 (5 MB)   |   1744    |     41      |     85      |  1.9 GB   |
+| 2097152 (16 MB) |   1658    |     30      |     121     |  1.9 GB   |
+| **Std Vec Ref** |    905    |    O(1)     |    O(1)     |  1.9 GB   |
+
+</details>
+
+<details>
+<summary><b>View 3 GB Sensitivity Data (375M Items)</b></summary>
+
+| N (Chunk Size)  | Push (ms) | Access (us) | Update (us) | RAM Usage |
+| :-------------- | :-------: | :---------: | :---------: | :-------: |
+| 128 (1 KB)      |   45090   |     46      |     240     |  11.3 GB  |
+| 1024 (8 KB)     |   7512    |     51      |     159     |  2.8 GB   |
+| 8192 (64 KB)    |   3227    |     38      |     156     |  2.8 GB   |
+| 32768 (256 KB)  |   2751    |     32      |     106     |  2.8 GB   |
+| 65536 (512 KB)  |   2661    |     38      |     154     |  2.8 GB   |
+| 131072 (1 MB)   |   2573    |     86      |     180     |  2.8 GB   |
+| 262144 (2 MB)   |   2548    |     31      |     94      |  2.8 GB   |
+| 655360 (5 MB)   |   2691    |     41      |     125     |  2.8 GB   |
+| 2097152 (16 MB) |   2522    |     49      |     159     |  2.8 GB   |
+| **Std Vec Ref** |   1655    |    O(1)     |    O(1)     |  2.8 GB   |
+
+</details>
+
+<details>
+<summary><b>View 4 GB Sensitivity Data (500M Items)</b></summary>
+
+| N (Chunk Size)  | Push (ms) | Access (us) | Update (us) | RAM Usage |
+| :-------------- | :-------: | :---------: | :---------: | :-------: |
+| 128 (1 KB)      |   60540   |     47      |     315     |  15.0 GB  |
+| 1024 (8 KB)     |   9890    |     80      |     203     |  3.7 GB   |
+| 8192 (64 KB)    |   4372    |     50      |     177     |  3.7 GB   |
+| 32768 (256 KB)  |   3720    |     51      |     163     |  3.7 GB   |
+| 65536 (512 KB)  |   3534    |     56      |     174     |  3.7 GB   |
+| 131072 (1 MB)   |   3583    |     50      |     163     |  3.7 GB   |
+| 262144 (2 MB)   |   3432    |     48      |     173     |  3.7 GB   |
+| 655360 (5 MB)   |   3512    |     62      |     165     |  3.7 GB   |
+| 2097152 (16 MB) |   3356    |     50      |     161     |  3.7 GB   |
+| **Std Vec Ref** |   1998    |    O(1)     |    O(1)     |  3.7 GB   |
+
+</details>
+
+_Note: Choosing N >= 64KB ensures peak hardware synergy and memory stability._
+
 ---
 
 ## How to Run Benchmarks
@@ -147,7 +238,12 @@ Fundamental access to the mirrored buffer.
 ```rust
 use picoring::PicoRing;
 
-let mut ring = PicoRing::<u8>::new(1024).unwrap();
+// Option A: Static capacity (via const generics)
+let mut ring = PicoRing::<u8, 4096>::new().unwrap();
+
+// Option B: Dynamic capacity
+let mut ring = PicoRing::<u8>::with_capacity(1024).unwrap();
+
 ring.push(42);
 let slice = ring.readable_slice(); // Always a contiguous slice
 assert_eq!(slice[0], 42);
@@ -160,8 +256,11 @@ Reservation-based API for maximum performance.
 ```rust
 use picoring::PicoQueue;
 
-let mut queue = PicoQueue::<u32>::new(1024).unwrap();
+// Static version
+let mut queue = PicoQueue::<u32, 1024>::new_static().unwrap();
 
+// Dynamic version
+let mut queue = PicoQueue::<u32>::new(1024).unwrap();
 // Write directly into reserved memory
 if let Some(buf) = queue.reserve(2) {
     buf[0] = 10;
@@ -184,6 +283,22 @@ use std::io::{Read, Write};
 
 let mut stream = PicoByteStream::new(4096).unwrap();
 stream.write_all(b"Hello Pico").unwrap();
+```
+
+### 4. Dynamic Chunked List (PicoList)
+
+Optimized for massive datasets, avoids large reallocations.
+
+```rust
+use picoring::PicoList;
+
+// 1MB chunks (131072 * 8 bytes for u64)
+let mut list = PicoList::<u64, 131072>::new();
+
+list.push(100);
+list.extend_from_slice(&[200, 300, 400]);
+
+assert_eq!(*list.get(0).unwrap(), 100);
 ```
 
 ---
