@@ -33,33 +33,33 @@ _Description: Accessing a contiguous slice of data that wraps around the buffer.
 
 | Read Size | Pico (avg ns) | Classic (avg ns) |     Speedup      |
 | :-------- | :-----------: | :--------------: | :--------------: |
-| 8 B       |       1       |        49        |    **49.00x**    |
-| 64 B      |       1       |        69        |    **69.00x**    |
-| 4.0 KB    |       1       |       200        |   **200.00x**    |
-| 64.0 KB   |       0       |       2630       |     **infx**     |
-| 1.0 MB    |       2       |      240148      |  **120074.00x**  |
-| 10.0 MB   |       1       |     1942358      | **1942358.00x**  |
-| 50.0 MB   |       1       |     9809676      | **9809676.00x**  |
-| 100.0 MB  |       4       |     19199420     | **4799855.00x**  |
-| 250.0 MB  |       8       |     48513931     | **6064241.38x**  |
-| 500.0 MB  |       4       |    103540057     | **25885014.25x** |
+| 8 B       |       2       |        84        |    **42.00x**    |
+| 64 B      |       1       |       112        |   **112.00x**    |
+| 4.0 KB    |       1       |       301        |   **301.00x**    |
+| 64.0 KB   |       1       |       5794       |   **5794.00x**   |
+| 1.0 MB    |       2       |      297976      |  **148988.00x**  |
+| 10.0 MB   |       1       |     1883261      | **1883261.00x**  |
+| 50.0 MB   |       1       |     10197133     | **10197133.00x** |
+| 100.0 MB  |       4       |     22075846     | **5518961.50x**  |
+| 250.0 MB  |       5       |     50443039     | **10088607.80x** |
+| 500.0 MB  |       4       |    102183291     | **25545822.75x** |
 
 ### 2. Full Cycle Performance (Write + Read)
 
 _Description: Combined time to write a packet and read it back immediately._
 
-| Cycle Size | Pico (avg ns) | Classic (avg ns) |  Speedup  |
-| :--------- | :-----------: | :--------------: | :-------: |
-| 8 B        |      15       |        75        | **5.00x** |
-| 64 B       |       8       |        63        | **7.88x** |
-| 4.0 KB     |      92       |       205        | **2.23x** |
-| 64.0 KB    |     1684      |      15476       | **9.19x** |
-| 1.0 MB     |     41084     |      352016      | **8.57x** |
-| 10.0 MB    |    669244     |     2934064      | **4.38x** |
-| 50.0 MB    |    3511548    |     15252756     | **4.34x** |
-| 100.0 MB   |    6817460    |     24923890     | **3.66x** |
-| 250.0 MB   |   16368680    |     65310000     | **3.99x** |
-| 500.0 MB   |   33242780    |    137514910     | **4.14x** |
+| Cycle Size | Pico (avg ns) | Classic (avg ns) |  Speedup   |
+| :--------- | :-----------: | :--------------: | :--------: |
+| 8 B        |      15       |        91        | **6.07x**  |
+| 64 B       |       4       |        59        | **14.75x** |
+| 4.0 KB     |      46       |       242        | **5.26x**  |
+| 64.0 KB    |     1362      |      15020       | **11.03x** |
+| 1.0 MB     |     28190     |      302556      | **10.73x** |
+| 10.0 MB    |    636418     |     2911980      | **4.58x**  |
+| 50.0 MB    |    3133888    |     13371780     | **4.27x**  |
+| 100.0 MB   |    7659580    |     27257800     | **3.56x**  |
+| 250.0 MB   |   16495180    |     71036560     | **4.31x**  |
+| 500.0 MB   |   32945940    |    198883560     | **6.04x**  |
 
 ### 3. Write Performance (Cross-Boundary Copy)
 
@@ -67,16 +67,16 @@ _Description: Copying data into the ring buffer when it crosses the physical bou
 
 | Packet Size | Pico (avg ns) | Classic (avg ns) |  Speedup  |
 | :---------- | :-----------: | :--------------: | :-------: |
-| 8 B         |      16       |        11        | **0.69x** |
-| 64 B        |       8       |        10        | **1.25x** |
-| 4.0 KB      |      44       |        42        | **0.95x** |
-| 64.0 KB     |     1618      |       1561       | **0.96x** |
-| 1.0 MB      |     46380     |      28452       | **0.61x** |
-| 10.0 MB     |    509513     |      339644      | **0.67x** |
-| 50.0 MB     |    3336179    |     3161439      | **0.95x** |
-| 100.0 MB    |    8084115    |     7447950      | **0.92x** |
-| 250.0 MB    |   19724620    |     17509530     | **0.89x** |
-| 500.0 MB    |   42631735    |     37274320     | **0.87x** |
+| 8 B         |      24       |        9         | **0.38x** |
+| 64 B        |       8       |        9         | **1.12x** |
+| 4.0 KB      |      60       |        43        | **0.72x** |
+| 64.0 KB     |     1765      |       1828       | **1.04x** |
+| 1.0 MB      |     31977     |      37107       | **1.16x** |
+| 10.0 MB     |    546821     |      455670      | **0.83x** |
+| 50.0 MB     |    3800115    |     3959129      | **1.04x** |
+| 100.0 MB    |    9539720    |     7614025      | **0.80x** |
+| 250.0 MB    |   21740000    |     19413425     | **0.89x** |
+| 500.0 MB    |   49187725    |     43610955     | **0.89x** |
 
 ---
 
@@ -99,15 +99,42 @@ Comparison between high-level collections and classic manual wrap logic.
 
 ## How to Run Benchmarks
 
-You can reproduce these results on your local machine:
+You can reproduce these results on your local machine.
+
+### Simple Benchmarks
+
+Quick smoke tests for immediate feedback:
 
 ```powershell
-# Core performance tests
+# Core hardware mirroring tests
 cargo test --test benchmarks --release -- --nocapture
 
 # High-level collections tests
 cargo test --test collections_bench --release -- --nocapture
 ```
+
+### Professional Benchmarks (Criterion)
+
+For statistically significant measurements and HTML reports:
+
+```powershell
+cargo bench --bench ring_bench
+```
+
+Reports will be generated at `target/criterion/report/index.html`.
+
+---
+
+## Performance Analysis (O-Notation)
+
+Standard ring buffers suffer from **Linear Time O(N)** overhead for reads when data wraps, because they require reassembling parts into a temporary buffer.
+
+PicoRing achieves **Constant Time O(1)** for all read operations. Because of hardware mirroring, the data is _already_ linear in virtual memory. As shown in Criterion results:
+
+- **Classic Read (1MB):** ~26.7 µs (microsecond) (Linear increase with size)
+- **PicoRing Read (1MB):** ~671 ps (picosecond) (Remains constant regardless of size)
+
+This makes PicoRing the ideal choice for high-frequency trading, real-time audio, and high-throughput network processing.
 
 ---
 

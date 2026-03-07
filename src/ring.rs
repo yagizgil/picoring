@@ -138,6 +138,7 @@ impl<T> PicoRing<T> {
     // --- High Level Slice APIs ---
 
     // returns a contiguous slice of all readable data
+    #[inline]
     pub fn readable_slice(&self) -> &[T] {
         let len = self.len();
         self.view(self.tail, len).unwrap_or(&[])
@@ -151,11 +152,13 @@ impl<T> PicoRing<T> {
     }
 
     // manually advance the write pointer
+    #[inline]
     pub fn advance_head(&mut self, n: usize) {
         self.head = (self.head + n) % self.capacity;
     }
 
     // manually advance the read pointer
+    #[inline]
     pub fn advance_tail(&mut self, n: usize) {
         self.tail = (self.tail + n) % self.capacity;
     }

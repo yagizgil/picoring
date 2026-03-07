@@ -11,12 +11,7 @@ pub struct MirrorBuffer {
 impl MirrorBuffer {
     // create a new mirrored buffer
     pub fn new(mut size: usize) -> Result<Self, String> {
-        let page_size = system::get_page_size();
-
-        // ensure size is a multiple of the system page size
-        if size % page_size != 0 {
-            size = ((size / page_size) + 1) * page_size;
-        }
+        size = align_to_page(size);
 
         // allocate the mirrored memory through platform-specific system calls
         let ptr = unsafe { system::allocate_mirror(size)? };
@@ -57,6 +52,6 @@ impl Drop for MirrorBuffer {
 
 // align a size to the nearest page boundary
 pub fn align_to_page(size: usize) -> usize {
-    let page_size = 4096;
+    let page_size = system::get_page_size();
     (size + page_size - 1) & !(page_size - 1)
 }

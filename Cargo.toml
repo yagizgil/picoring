@@ -1,6 +1,6 @@
 [package]
 name = "picoring"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "High-performance, zero-copy circular buffer for Rust using hardware memory mirroring."
 license = "MIT OR Apache-2.0"
@@ -22,3 +22,10 @@ windows-sys = { version = "0.61.2", features = [
   "Win32_System_Memory",
   "Win32_System_SystemInformation",
 ] }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "ring_bench"
+harness = false

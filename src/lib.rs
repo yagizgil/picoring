@@ -3,9 +3,9 @@ pub mod collections;
 pub mod ring;
 pub mod system;
 
-pub use collections::{PicoByteStream, PicoQueue};
-
 pub use buffer::MirrorBuffer;
+pub use collections::{PicoByteStream, PicoQueue};
+pub use ring::PicoRing;
 
 #[cfg(test)]
 mod tests {
