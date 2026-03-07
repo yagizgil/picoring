@@ -105,7 +105,7 @@ PicoList is a dynamic, chunked collection designed to handle massive datasets (G
 | Operation        |  PicoList  |    Vec     |  VecDeque  |  LinkedList  |   BTreeMap   |   HashMap    |
 | :--------------- | :--------: | :--------: | :--------: | :----------: | :----------: | :----------: |
 | **Pushing (ms)** |    3655    |    2177    |    1972    |    26000     |    44500     |    42500     |
-| **Access (us)**  |  **151**   |    214     |    212     |   > 1 WEEK   |   O(log N)   |     O(1)     |
+| **Access (µs)**  |  **151**   |    214     |    212     |   > 1 WEEK   |   O(log N)   |     O(1)     |
 | **RAM Usage**    | **3.7 GB** | **3.7 GB** | **3.7 GB** | **15.0 GB!** | **17.3 GB!** | **16.4 GB!** |
 
 _Analysis: PicoList outperforms Vec in random access speed at 3.7GB scale while maintaining identical memory efficiency._
@@ -115,7 +115,7 @@ _Analysis: PicoList outperforms Vec in random access speed at 3.7GB scale while 
 <details>
 <summary><b>View 1 GB Sensitivity Data (125M Items)</b></summary>
 
-| N (Chunk Size)  | Push (ms) | Access (us) | Update (us) | RAM Usage |
+| N (Chunk Size)  | Push (ms) | Access (µs) | Update (µs) | RAM Usage |
 | :-------------- | :-------: | :---------: | :---------: | :-------: |
 | 128 (1 KB)      |   15095   |     55      |     483     |  3.8 GB   |
 | 1024 (8 KB)     |   2559    |     34      |     151     | 959.3 MB  |
@@ -133,7 +133,7 @@ _Analysis: PicoList outperforms Vec in random access speed at 3.7GB scale while 
 <details>
 <summary><b>View 2 GB Sensitivity Data (250M Items)</b></summary>
 
-| N (Chunk Size)  | Push (ms) | Access (us) | Update (us) | RAM Usage |
+| N (Chunk Size)  | Push (ms) | Access (µs) | Update (µs) | RAM Usage |
 | :-------------- | :-------: | :---------: | :---------: | :-------: |
 | 128 (1 KB)      |   30658   |     52      |     457     |  7.5 GB   |
 | 1024 (8 KB)     |   5236    |     53      |     204     |  1.9 GB   |
@@ -151,7 +151,7 @@ _Analysis: PicoList outperforms Vec in random access speed at 3.7GB scale while 
 <details>
 <summary><b>View 3 GB Sensitivity Data (375M Items)</b></summary>
 
-| N (Chunk Size)  | Push (ms) | Access (us) | Update (us) | RAM Usage |
+| N (Chunk Size)  | Push (ms) | Access (µs) | Update (µs) | RAM Usage |
 | :-------------- | :-------: | :---------: | :---------: | :-------: |
 | 128 (1 KB)      |   45605   |     20      |     222     |  11.3 GB  |
 | 1024 (8 KB)     |   8134    |     51      |     218     |  2.8 GB   |
@@ -169,7 +169,7 @@ _Analysis: PicoList outperforms Vec in random access speed at 3.7GB scale while 
 <details>
 <summary><b>View 4 GB Sensitivity Data (500M Items)</b></summary>
 
-| N (Chunk Size)  | Push (ms) | Access (us) | Update (us) | RAM Usage |
+| N (Chunk Size)  | Push (ms) | Access (µs) | Update (µs) | RAM Usage |
 | :-------------- | :-------: | :---------: | :---------: | :-------: |
 | 128 (1 KB)      |   65641   |     437     |    50893    |  13.9 GB  |
 | 1024 (8 KB)     |   10337   |     36      |     183     |  3.7 GB   |
