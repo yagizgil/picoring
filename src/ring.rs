@@ -13,7 +13,7 @@ pub struct PicoRing<T> {
 impl<T> PicoRing<T> {
     pub fn new(capacity_count: usize) -> Result<Self, String> {
         // calculate the size of T and create a MirrorBuffer aligned to page boundaries
-        let item_size = std::mem::size_of::<T>();
+        let item_size = core::mem::size_of::<T>();
 
         // protect against Zero Sized Types (ZST) to avoid division by zero
         if item_size == 0 {

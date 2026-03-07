@@ -1,4 +1,4 @@
-use std::ptr;
+use core::ptr;
 use windows_sys::Win32::Foundation::*;
 use windows_sys::Win32::System::Memory::*;
 
@@ -7,7 +7,7 @@ use windows_sys::Win32::System::Memory::*;
 unsafe extern "system" {
     unsafe fn CreateFileMappingW(
         hfile: HANDLE,
-        lpfilemappingattributes: *const std::ffi::c_void,
+        lpfilemappingattributes: *const core::ffi::c_void,
         flprotect: u32,
         dwmaximumsizehigh: u32,
         dwmaximumsizelow: u32,
@@ -159,11 +159,11 @@ pub unsafe fn deallocate_mirror(ptr: *mut u8, size: usize) {
         // unmap both views
         // windows-sys 0.61+ uses the MEMORY_MAPPED_VIEW_ADDRESS union for UnmapViewOfFile
         UnmapViewOfFile(MEMORY_MAPPED_VIEW_ADDRESS {
-            Value: ptr as *mut std::ffi::c_void,
+            Value: ptr as *mut core::ffi::c_void,
         });
 
         UnmapViewOfFile(MEMORY_MAPPED_VIEW_ADDRESS {
-            Value: ptr.add(size) as *mut std::ffi::c_void,
+            Value: ptr.add(size) as *mut core::ffi::c_void,
         });
     }
 }

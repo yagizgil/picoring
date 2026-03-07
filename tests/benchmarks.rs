@@ -78,8 +78,8 @@ fn ultimate_performance_showdown() {
         for _ in 0..iterations {
             unsafe {
                 let dest = ring.as_mut_slice().as_mut_ptr().add(split_pos);
-                std::ptr::copy_nonoverlapping(data_to_push.as_ptr(), dest, size);
-                black_box(std::ptr::read_volatile(dest));
+                core::ptr::copy_nonoverlapping(data_to_push.as_ptr(), dest, size);
+                black_box(core::ptr::read_volatile(dest));
             }
         }
         let pico_avg = start_pico.elapsed().as_nanos() / iterations as u128;

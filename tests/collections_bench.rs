@@ -1,5 +1,5 @@
+use core::hint::black_box;
 use picoring::{PicoByteStream, PicoQueue};
-use std::hint::black_box;
 use std::io::{Read, Write};
 use std::time::Instant;
 

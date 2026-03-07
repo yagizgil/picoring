@@ -23,6 +23,6 @@ fn main() {
 }
 
 fn parse_json(data: &[u8]) {
-    let s = std::str::from_utf8(data).unwrap();
+    let s = core::str::from_utf8(data).unwrap();
     assert!(s.contains("very large content"));
 }
