@@ -100,7 +100,7 @@ Comparison between high-level collections and classic manual wrap logic.
 PicoList is a dynamic, chunked collection designed to handle massive datasets (GBs) without the performance degradation of large reallocations.
 
 <details>
-<summary><b>View Ultimate War Results (3.7 GB / 500M Items)</b></summary>
+<summary><b>View Benchmark Results (3.7 GB / 500M Items)</b></summary>
 
 | Operation        |  PicoList  |    Vec     |  VecDeque  |  LinkedList  |   BTreeMap   |   HashMap    |
 | :--------------- | :--------: | :--------: | :--------: | :----------: | :----------: | :----------: |
