@@ -6,6 +6,23 @@ By mapping the same physical memory to two adjacent virtual address ranges, Pico
 
 ---
 
+## Installation
+
+Add PicoRing to your project using cargo:
+
+```powershell
+cargo add picoring
+```
+
+Or add it manually to your `Cargo.toml`:
+
+```toml
+[dependencies]
+picoring = "0.1.0"
+```
+
+---
+
 ## Performance Benchmarks
 
 Below are the complete benchmark results comparing PicoRing against a classic vector-based ring buffer implementation.
