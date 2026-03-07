@@ -18,7 +18,7 @@ Or add it manually to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-picoring = "0.2.0"
+picoring = "0.3.0"
 ```
 
 ---
