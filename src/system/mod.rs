@@ -11,16 +11,31 @@ pub use windows::{allocate_mirror, deallocate_mirror};
 
 // helper to get the OS page size
 pub fn get_page_size() -> usize {
-    #[cfg(unix)]
-    unsafe {
-        // get page size for Unix
-        libc::sysconf(libc::_SC_PAGESIZE) as usize
-    }
-    #[cfg(windows)]
-    unsafe {
-        // use GetSystemInfo for Windows
-        let mut info = std::mem::zeroed();
-        windows_sys::Win32::System::SystemInformation::GetSystemInfo(&mut info);
-        info.dwPageSize as usize
-    }
+    use std::sync::OnceLock;
+    static PAGE_SIZE: OnceLock<usize> = OnceLock::new();
+
+    *PAGE_SIZE.get_or_init(|| {
+        #[cfg(unix)]
+        unsafe {
+            // get page size for Unix
+            let res = libc::sysconf(libc::_SC_PAGESIZE);
+            if res <= 0 {
+                4096 // Fallback to 4KB if sysconf fails
+            } else {
+                res as usize
+            }
+        }
+        #[cfg(windows)]
+        unsafe {
+            use windows_sys::Win32::System::SystemInformation::*;
+            // use GetSystemInfo for Windows
+            let mut info: SYSTEM_INFO = std::mem::zeroed();
+            GetSystemInfo(&mut info);
+            info.dwPageSize as usize
+        }
+        #[cfg(not(any(unix, windows)))]
+        {
+            4096 // Default fallback
+        }
+    })
 }

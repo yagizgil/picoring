@@ -30,11 +30,12 @@ mod tests {
 
     #[test]
     fn test_alignment() {
+        let ps = system::get_page_size();
         assert_eq!(buffer::align_to_page(0), 0);
-        assert_eq!(buffer::align_to_page(1), 4096);
-        assert_eq!(buffer::align_to_page(4095), 4096);
-        assert_eq!(buffer::align_to_page(4096), 4096);
-        assert_eq!(buffer::align_to_page(4097), 8192);
-        assert_eq!(buffer::align_to_page(5000), 8192);
+        assert_eq!(buffer::align_to_page(1), ps);
+        assert_eq!(buffer::align_to_page(ps - 1), ps);
+        assert_eq!(buffer::align_to_page(ps), ps);
+        assert_eq!(buffer::align_to_page(ps + 1), 2 * ps);
+        assert_eq!(buffer::align_to_page(2 * ps - 1), 2 * ps);
     }
 }
