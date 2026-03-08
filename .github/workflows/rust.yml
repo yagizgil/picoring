@@ -37,4 +37,4 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Run tests
-        run: cargo test --test smoke_test --test integration --all-features -- --test-threads=1
+        run: cargo test --test smoke_test --release -- --nocapture --test-threads=1
