@@ -1,6 +1,6 @@
 [package]
 name = "picoring"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 description = "High-performance, zero-copy circular buffer for Rust using hardware memory mirroring."
 license = "MIT OR Apache-2.0"
@@ -23,7 +23,7 @@ crate-type = ["rlib", "cdylib"]
 libc = "0.2.182"
 pyo3 = { version = "0.22", features = [
   "extension-module",
-  "abi3-py310",
+  "abi3-py311",
 ], optional = true }
 windows-sys = { version = "0.61.2", features = [
   "Win32_Foundation",
