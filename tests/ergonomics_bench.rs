@@ -10,9 +10,21 @@ fn bench_ergonomics_vs_manual() {
         items
     );
     println!("{:-<100}", "");
+    let format_time = |ns: f64| {
+        if ns < 1.0 {
+            format!("{:.0} ps", ns * 1000.0)
+        } else if ns < 1000.0 {
+            format!("{:.1} ns", ns)
+        } else if ns < 1_000_000.0 {
+            format!("{:.2} µs", ns / 1000.0)
+        } else {
+            format!("{:.2} ms", ns / 1_000_000.0)
+        }
+    };
+
     println!(
         "{:<25} | {:<20} | {:<20} | {:<20}",
-        "Operation", "Manual/Old (µs)", "Ergonomic/New (µs)", "Std Collection (µs)"
+        "Operation", "Manual/Old", "Ergonomic/New", "Std Collection"
     );
     println!("{:-<100}", "");
 
@@ -29,25 +41,28 @@ fn bench_ergonomics_vs_manual() {
     for i in 0..items {
         black_box(plist.get(i));
     }
-    let plist_manual_get = start.elapsed().as_micros();
+    let plist_manual_get = start.elapsed().as_nanos() as f64 / items as f64;
 
     // Ergonomic []
     let start = Instant::now();
     for i in 0..items {
         black_box(&plist[i]);
     }
-    let plist_ergonomic_index = start.elapsed().as_micros();
+    let plist_ergonomic_index = start.elapsed().as_nanos() as f64 / items as f64;
 
     // Std Vec []
     let start = Instant::now();
     for i in 0..items {
         black_box(&vec[i]);
     }
-    let vec_index = start.elapsed().as_micros();
+    let vec_index = start.elapsed().as_nanos() as f64 / items as f64;
 
     println!(
         "{:<25} | {:<20} | {:<20} | {:<20}",
-        "List Indexing", plist_manual_get, plist_ergonomic_index, vec_index
+        "List Indexing (avg)",
+        format_time(plist_manual_get),
+        format_time(plist_ergonomic_index),
+        format_time(vec_index)
     );
 
     // --- 2. PICOLIST ITERATION ---
@@ -56,25 +71,28 @@ fn bench_ergonomics_vs_manual() {
     for i in 0..items {
         black_box(plist.get(i));
     }
-    let plist_manual_iter = start.elapsed().as_micros();
+    let plist_manual_iter = start.elapsed().as_nanos() as f64 / items as f64;
 
     // Ergonomic for x in &list
     let start = Instant::now();
     for x in &plist {
         black_box(x);
     }
-    let plist_ergonomic_iter = start.elapsed().as_micros();
+    let plist_ergonomic_iter = start.elapsed().as_nanos() as f64 / items as f64;
 
     // Std Vec iter
     let start = Instant::now();
     for x in &vec {
         black_box(x);
     }
-    let vec_iter = start.elapsed().as_micros();
+    let vec_iter = start.elapsed().as_nanos() as f64 / items as f64;
 
     println!(
         "{:<25} | {:<20} | {:<20} | {:<20}",
-        "List Iteration", plist_manual_iter, plist_ergonomic_iter, vec_iter
+        "List Iteration (avg)",
+        format_time(plist_manual_iter),
+        format_time(plist_ergonomic_iter),
+        format_time(vec_iter)
     );
 
     // --- 3. PICOQUEUE INDEXING ---
@@ -88,18 +106,21 @@ fn bench_ergonomics_vs_manual() {
     for i in 0..items {
         black_box(&pqueue.peek()[i]);
     }
-    let pqueue_manual_index = start.elapsed().as_micros();
+    let pqueue_manual_index = start.elapsed().as_nanos() as f64 / items as f64;
 
     // Ergonomic pqueue[i]
     let start = Instant::now();
     for i in 0..items {
         black_box(&pqueue[i]);
     }
-    let pqueue_ergonomic_index = start.elapsed().as_micros();
+    let pqueue_ergonomic_index = start.elapsed().as_nanos() as f64 / items as f64;
 
     println!(
         "{:<25} | {:<20} | {:<20} | {:<20}",
-        "Queue Indexing", pqueue_manual_index, pqueue_ergonomic_index, "N/A"
+        "Queue Indexing (avg)",
+        format_time(pqueue_manual_index),
+        format_time(pqueue_ergonomic_index),
+        "N/A"
     );
 
     // --- 4. PICOBYTESTREAM ITERATION ---
@@ -113,18 +134,21 @@ fn bench_ergonomics_vs_manual() {
     for b in pstream.as_read_slice().iter() {
         black_box(b);
     }
-    let pstream_manual_iter = start.elapsed().as_micros();
+    let pstream_manual_iter = start.elapsed().as_nanos() as f64 / items as f64;
 
     // Ergonomic for b in &stream
     let start = Instant::now();
     for b in &pstream {
         black_box(b);
     }
-    let pstream_ergonomic_iter = start.elapsed().as_micros();
+    let pstream_ergonomic_iter = start.elapsed().as_nanos() as f64 / items as f64;
 
     println!(
         "{:<25} | {:<20} | {:<20} | {:<20}",
-        "Stream Iteration", pstream_manual_iter, pstream_ergonomic_iter, "N/A"
+        "Stream Iteration (avg)",
+        format_time(pstream_manual_iter),
+        format_time(pstream_ergonomic_iter),
+        "N/A"
     );
 
     println!("{:-<100}", "");

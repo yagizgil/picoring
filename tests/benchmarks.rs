@@ -14,12 +14,28 @@ fn format_size(bytes: usize) -> String {
 }
 
 // Helper to print a benchmark row with speedup status
-fn print_row(label: &str, pico_ns: u128, classic_ns: u128) {
-    let multiplier = classic_ns as f64 / pico_ns as f64;
+// Helper to print a benchmark row with speedup status and smart units
+fn print_row(label: &str, pico_ns: f64, classic_ns: f64) {
+    let multiplier = classic_ns / pico_ns;
+
+    let format_time = |ns: f64| {
+        if ns < 1.0 {
+            format!("{:.0} ps", ns * 1000.0)
+        } else if ns < 1000.0 {
+            format!("{:.1} ns", ns)
+        } else if ns < 1_000_000.0 {
+            format!("{:.2} µs", ns / 1000.0)
+        } else {
+            format!("{:.2} ms", ns / 1_000_000.0)
+        }
+    };
 
     println!(
-        "{:<15} | {:>15} | {:>15} | {:>9.2}x",
-        label, pico_ns, classic_ns, multiplier
+        "{:<15} | {:>15} | {:>15} | {:>10.2}x",
+        label,
+        format_time(pico_ns),
+        format_time(classic_ns),
+        multiplier
     );
 }
 
@@ -57,7 +73,7 @@ fn ultimate_performance_showdown() {
     println!("{:-<75}", "");
     println!(
         "{:<15} | {:>15} | {:>15} | {:>11}",
-        "Packet Size", "Pico (avg ns)", "Classic (avg ns)", "Speedup"
+        "Packet Size", "Pico (avg)", "Classic (avg)", "Speedup"
     );
     println!("{:-<75}", "");
 
@@ -83,7 +99,7 @@ fn ultimate_performance_showdown() {
                 black_box(core::ptr::read_volatile(dest));
             }
         }
-        let pico_avg = start_pico.elapsed().as_nanos() / iterations as u128;
+        let pico_avg = start_pico.elapsed().as_nanos() as f64 / iterations as f64;
 
         // Classic Split-Copy
         let start_classic = Instant::now();
@@ -94,7 +110,7 @@ fn ultimate_performance_showdown() {
             classic_vec[0..(size - split_at)].copy_from_slice(second);
             black_box(classic_vec[0]);
         }
-        let classic_avg = start_classic.elapsed().as_nanos() / iterations as u128;
+        let classic_avg = start_classic.elapsed().as_nanos() as f64 / iterations as f64;
 
         print_row(&format_size(size), pico_avg, classic_avg);
     }
@@ -105,7 +121,7 @@ fn ultimate_performance_showdown() {
     println!("{:-<75}", "");
     println!(
         "{:<15} | {:>15} | {:>15} | {:>11}",
-        "Read Size", "Pico (avg ns)", "Classic (avg ns)", "Speedup"
+        "Read Size", "Pico (avg)", "Classic (avg)", "Speedup"
     );
     println!("{:-<75}", "");
 
@@ -127,7 +143,7 @@ fn ultimate_performance_showdown() {
             black_box(slice[0]);
             black_box(slice[size - 1]);
         }
-        let pico_avg = start_pico.elapsed().as_nanos() / iterations as u128;
+        let pico_avg = start_pico.elapsed().as_nanos() as f64 / iterations as f64;
 
         // Classic Read (Must Copy to Reassemble)
         let start_classic = Instant::now();
@@ -140,7 +156,7 @@ fn ultimate_performance_showdown() {
             black_box(temp_buf[0]);
             black_box(temp_buf[size - 1]);
         }
-        let classic_avg = start_classic.elapsed().as_nanos() / iterations as u128;
+        let classic_avg = start_classic.elapsed().as_nanos() as f64 / iterations as f64;
 
         print_row(&format_size(size), pico_avg, classic_avg);
     }
@@ -151,7 +167,7 @@ fn ultimate_performance_showdown() {
     println!("{:-<75}", "");
     println!(
         "{:<15} | {:>15} | {:>15} | {:>11}",
-        "Cycle Size", "Pico (avg ns)", "Classic (avg ns)", "Speedup"
+        "Cycle Size", "Pico (avg)", "Classic (avg)", "Speedup"
     );
     println!("{:-<75}", "");
 
@@ -180,7 +196,7 @@ fn ultimate_performance_showdown() {
                 black_box(slice[size / 2]);
             }
         }
-        let pico_avg = start_pico.elapsed().as_nanos() / iterations as u128;
+        let pico_avg = start_pico.elapsed().as_nanos() as f64 / iterations as f64;
 
         // Classic Full Cycle
         let start_classic = Instant::now();
@@ -197,7 +213,7 @@ fn ultimate_performance_showdown() {
             temp[flen..size].copy_from_slice(&classic_vec[0..(size - flen)]);
             black_box(temp[size / 2]);
         }
-        let classic_avg = start_classic.elapsed().as_nanos() / iterations as u128;
+        let classic_avg = start_classic.elapsed().as_nanos() as f64 / iterations as f64;
 
         print_row(&format_size(size), pico_avg, classic_avg);
     }

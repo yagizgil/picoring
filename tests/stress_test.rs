@@ -1,6 +1,18 @@
 use picoring::ring::PicoRing;
 use std::time::Instant;
 
+fn format_time(ns: f64) -> String {
+    if ns < 1.0 {
+        format!("{:.0} ps", ns * 1000.0)
+    } else if ns < 1000.0 {
+        format!("{:.1} ns", ns)
+    } else if ns < 1_000_000.0 {
+        format!("{:.2} µs", ns / 1000.0)
+    } else {
+        format!("{:.2} ms", ns / 1_000_000.0)
+    }
+}
+
 #[test]
 fn pico_ring_data_integrity_stress_test() {
     // 1 MB physical capacity
@@ -66,7 +78,7 @@ fn pico_ring_data_integrity_stress_test() {
 
     println!("{:-<40}", "");
     println!("SUCCESS! All 1 GB verified without corruption.");
-    println!("Time taken: {:.2?}", duration);
+    println!("Time taken: {}", format_time(duration.as_nanos() as f64));
     println!("Throughput: {:.2} MB/s", throughput);
     println!("{:-<40}\n", "");
 }

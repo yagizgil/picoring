@@ -15,12 +15,31 @@ fn format_size(bytes: usize) -> String {
 }
 
 // Helper to print a benchmark row
-fn print_row(label: &str, stream_ns: u128, queue_ns: u128, classic_ns: u128) {
-    let stream_speedup = classic_ns as f64 / stream_ns as f64;
-    let queue_speedup = classic_ns as f64 / queue_ns as f64;
+// Helper to print a benchmark row with smart units
+fn print_row(label: &str, stream_ns: f64, queue_ns: f64, classic_ns: f64) {
+    let multiplier_stream = classic_ns / stream_ns;
+    let multiplier_queue = classic_ns / queue_ns;
+
+    let format_time = |ns: f64| {
+        if ns < 1.0 {
+            format!("{:.0} ps", ns * 1000.0)
+        } else if ns < 1000.0 {
+            format!("{:.1} ns", ns)
+        } else if ns < 1_000_000.0 {
+            format!("{:.2} µs", ns / 1000.0)
+        } else {
+            format!("{:.2} ms", ns / 1_000_000.0)
+        }
+    };
+
     println!(
         "{:<12} | {:>12} | {:>12} | {:>12} | {:>10.1}x | {:>10.1}x",
-        label, stream_ns, queue_ns, classic_ns, stream_speedup, queue_speedup
+        label,
+        format_time(stream_ns),
+        format_time(queue_ns),
+        format_time(classic_ns),
+        multiplier_stream,
+        multiplier_queue
     );
 }
 
@@ -35,7 +54,7 @@ fn collection_performance_showdown() {
     println!("{:-<100}", "");
     println!(
         "{:<12} | {:>12} | {:>12} | {:>12} | {:>11} | {:>11}",
-        "Data Size", "Stream (ns)", "Queue (ns)", "Classic (ns)", "Stream Up", "Queue Up"
+        "Data Size", "Stream", "Queue", "Classic", "Stream Up", "Queue Up"
     );
     println!("{:-<100}", "");
 
@@ -68,7 +87,7 @@ fn collection_performance_showdown() {
             let _ = stream.read(&mut read_buffer).unwrap();
             black_box(&read_buffer);
         }
-        let stream_avg = start_stream.elapsed().as_nanos() / iterations as u128;
+        let stream_avg = start_stream.elapsed().as_nanos() as f64 / iterations as f64;
 
         // --- 2. PicoQueue (Reservation Based) ---
         let start_queue = Instant::now();
@@ -86,7 +105,7 @@ fn collection_performance_showdown() {
                 queue.release(size);
             }
         }
-        let queue_avg = start_queue.elapsed().as_nanos() / iterations as u128;
+        let queue_avg = start_queue.elapsed().as_nanos() as f64 / iterations as f64;
 
         // --- 3. Classic Vec Wrap Cycle ---
         let mut classic_head = capacity_bytes - (size / 2);
@@ -117,7 +136,7 @@ fn collection_performance_showdown() {
 
             black_box(&read_buffer);
         }
-        let classic_avg = start_classic.elapsed().as_nanos() / iterations as u128;
+        let classic_avg = start_classic.elapsed().as_nanos() as f64 / iterations as f64;
 
         print_row(&format_size(size), stream_avg, queue_avg, classic_avg);
     }

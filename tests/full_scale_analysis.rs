@@ -2,7 +2,19 @@ use picoring::PicoList;
 use std::collections::{BTreeMap, HashMap, LinkedList, VecDeque};
 use std::hint::black_box;
 use std::time::Instant;
-use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System, get_current_pid};
+use sysinfo::{get_current_pid, ProcessRefreshKind, ProcessesToUpdate, System};
+
+fn format_time(ns: f64) -> String {
+    if ns < 1.0 {
+        format!("{:.0} ps", ns * 1000.0)
+    } else if ns < 1000.0 {
+        format!("{:.1} ns", ns)
+    } else if ns < 1_000_000.0 {
+        format!("{:.2} µs", ns / 1000.0)
+    } else {
+        format!("{:.2} ms", ns / 1_000_000.0)
+    }
+}
 
 fn format_bytes(bytes: u64) -> String {
     if bytes < 1024 {
@@ -51,7 +63,12 @@ fn rust_collections_scale_analysis() {
     let indices: Vec<usize> = (0..access_count).map(|i| (i * 13) % mega_items).collect();
 
     let (mut pico_res, mut vec_res, mut deque_res, mut list_res, mut btree_res, mut hash_res) = (
-        [0u128; 3], [0u128; 3], [0u128; 3], [0u128; 3], [0u128; 3], [0u128; 3],
+        [0.0f64; 3],
+        [0.0f64; 3],
+        [0.0f64; 3],
+        [0.0f64; 3],
+        [0.0f64; 3],
+        [0.0f64; 3],
     );
     let (pico_mem, vec_mem, deque_mem, list_mem, btree_mem, hash_mem);
 
@@ -62,13 +79,13 @@ fn rust_collections_scale_analysis() {
         for i in 0..mega_items {
             coll.push(black_box(i as u64));
         }
-        pico_res[0] = start.elapsed().as_millis();
+        pico_res[0] = start.elapsed().as_nanos() as f64;
         pico_mem = get_rss_bytes(&mut sys).saturating_sub(baseline_init);
         let start = Instant::now();
         for &idx in &indices {
             black_box(coll.get(idx));
         }
-        pico_res[1] = start.elapsed().as_micros();
+        pico_res[1] = start.elapsed().as_nanos() as f64 / indices.len() as f64;
         black_box(coll); // ensure it's not dropped early
     }
     let baseline = get_rss_bytes(&mut sys);
@@ -80,13 +97,13 @@ fn rust_collections_scale_analysis() {
         for i in 0..mega_items {
             coll.push(black_box(i as u64));
         }
-        vec_res[0] = start.elapsed().as_millis();
+        vec_res[0] = start.elapsed().as_nanos() as f64;
         vec_mem = get_rss_bytes(&mut sys).saturating_sub(baseline);
         let start = Instant::now();
         for &idx in &indices {
             black_box(coll.get(idx));
         }
-        vec_res[1] = start.elapsed().as_micros();
+        vec_res[1] = start.elapsed().as_nanos() as f64 / indices.len() as f64;
         black_box(coll);
     }
     let baseline = get_rss_bytes(&mut sys);
@@ -98,13 +115,13 @@ fn rust_collections_scale_analysis() {
         for i in 0..mega_items {
             coll.push_back(black_box(i as u64));
         }
-        deque_res[0] = start.elapsed().as_millis();
+        deque_res[0] = start.elapsed().as_nanos() as f64;
         deque_mem = get_rss_bytes(&mut sys).saturating_sub(baseline);
         let start = Instant::now();
         for &idx in &indices {
             black_box(coll.get(idx));
         }
-        deque_res[1] = start.elapsed().as_micros();
+        deque_res[1] = start.elapsed().as_nanos() as f64 / indices.len() as f64;
         black_box(coll);
     }
     let baseline = get_rss_bytes(&mut sys);
@@ -117,7 +134,7 @@ fn rust_collections_scale_analysis() {
         for i in 0..items {
             coll.push_back(i as u64);
         }
-        list_res[0] = start.elapsed().as_millis() * (mega_items / 1_000_000) as u128;
+        list_res[0] = start.elapsed().as_nanos() as f64 * (mega_items / 1_000_000) as f64;
         list_mem =
             get_rss_bytes(&mut sys).saturating_sub(baseline) * (mega_items / 1_000_000) as u64;
     }
@@ -131,7 +148,7 @@ fn rust_collections_scale_analysis() {
         for i in 0..items {
             coll.insert(i as u64, i as u64);
         }
-        btree_res[0] = start.elapsed().as_millis() * (mega_items / 1_000_000) as u128;
+        btree_res[0] = start.elapsed().as_nanos() as f64 * (mega_items / 1_000_000) as f64;
         btree_mem =
             get_rss_bytes(&mut sys).saturating_sub(baseline) * (mega_items / 1_000_000) as u64;
     }
@@ -145,24 +162,30 @@ fn rust_collections_scale_analysis() {
         for i in 0..items {
             coll.insert(i as u64, i as u64);
         }
-        hash_res[0] = start.elapsed().as_millis() * (mega_items / 1_000_000) as u128;
+        hash_res[0] = start.elapsed().as_nanos() as f64 * (mega_items / 1_000_000) as f64;
         hash_mem =
             get_rss_bytes(&mut sys).saturating_sub(baseline) * (mega_items / 1_000_000) as u64;
     }
 
     println!(
         "{:<15} | {:>15} | {:>12} | {:>12} | {:>15} | {:>12} | {:>12}",
-        "Pushing (ms)",
-        pico_res[0],
-        vec_res[0],
-        deque_res[0],
-        list_res[0],
-        btree_res[0],
-        hash_res[0]
+        "Pushing",
+        format_time(pico_res[0]),
+        format_time(vec_res[0]),
+        format_time(deque_res[0]),
+        format_time(list_res[0]),
+        format_time(btree_res[0]),
+        format_time(hash_res[0])
     );
     println!(
         "{:<15} | {:>15} | {:>12} | {:>12} | {:>15} | {:>12} | {:>12}",
-        "Access (us)", pico_res[1], vec_res[1], deque_res[1], "> 1 WEEK", "O(log N)", "O(1)"
+        "Access (avg)",
+        format_time(pico_res[1]),
+        format_time(vec_res[1]),
+        format_time(deque_res[1]),
+        "> 1 WEEK",
+        "O(log N)",
+        "O(1)"
     );
     println!(
         "{:<15} | {:>15} | {:>12} | {:>12} | {:>15} | {:>12} | {:>12}",
@@ -193,7 +216,7 @@ fn rust_collections_scale_analysis() {
         println!("{:-<100}", "");
         println!(
             "{:<20} | {:>15} | {:>15} | {:>15} | {:>15}",
-            "N (Chunk Size)", "Push (ms)", "Access (us)", "Update (us)", "RAM Usage"
+            "N (Chunk Size)", "Push", "Access", "Update", "RAM Usage"
         );
         println!("{:-<100}", "");
 
@@ -218,14 +241,14 @@ fn rust_collections_scale_analysis() {
             for j in 0..items {
                 coll.push(black_box(j as u64));
             }
-            let push_ms = start.elapsed().as_millis();
+            let push_time = start.elapsed().as_nanos() as f64;
             let mem = get_rss_bytes(&mut sys).saturating_sub(baseline);
 
             let start = Instant::now();
             for &idx in &indices {
                 black_box(coll.get(idx));
             }
-            let get_us = start.elapsed().as_micros();
+            let get_time = start.elapsed().as_nanos() as f64 / indices.len() as f64;
 
             let start = Instant::now();
             for &idx in &indices {
@@ -233,15 +256,15 @@ fn rust_collections_scale_analysis() {
                     *v = black_box(*v + 1);
                 }
             }
-            let mut_us = start.elapsed().as_micros();
+            let mut_time = start.elapsed().as_nanos() as f64 / indices.len() as f64;
 
             println!("{:-<100}", "");
             println!(
                 "{:<20} | {:>15} | {:>15} | {:>15} | {:>15}",
                 "Std Vec Ref",
-                push_ms,
-                get_us,
-                mut_us,
+                format_time(push_time),
+                format_time(get_time),
+                format_time(mut_time),
                 format_bytes(mem)
             );
             black_box(coll);
@@ -258,14 +281,14 @@ fn run_sens<const N: usize>(sys: &mut System, items: usize, indices: &[usize], l
     for i in 0..items {
         pico.push(black_box(i as u64));
     }
-    let push_ms = start.elapsed().as_millis();
+    let push_time = start.elapsed().as_nanos() as f64;
     let mem = get_rss_bytes(sys).saturating_sub(baseline);
 
     let start = Instant::now();
     for &idx in indices {
         black_box(pico.get(idx));
     }
-    let get_us = start.elapsed().as_micros();
+    let get_time = start.elapsed().as_nanos() as f64 / indices.len() as f64;
 
     let start = Instant::now();
     for &idx in indices {
@@ -273,14 +296,14 @@ fn run_sens<const N: usize>(sys: &mut System, items: usize, indices: &[usize], l
             *v = black_box(*v + 1);
         }
     }
-    let mut_us = start.elapsed().as_micros();
+    let mut_time = start.elapsed().as_nanos() as f64 / indices.len() as f64;
 
     println!(
         "{:<20} | {:>15} | {:>15} | {:>15} | {:>15}",
         label,
-        push_ms,
-        get_us,
-        mut_us,
+        format_time(push_time),
+        format_time(get_time),
+        format_time(mut_time),
         format_bytes(mem)
     );
     black_box(pico);

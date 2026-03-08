@@ -3,9 +3,18 @@ pub mod collections;
 pub mod ring;
 pub mod system;
 
+#[cfg(feature = "python")]
+pub mod python;
+
 pub use buffer::MirrorBuffer;
 pub use collections::{PicoByteStream, PicoList, PicoQueue};
 pub use ring::PicoRing;
+
+#[cfg(feature = "python")]
+#[pyo3::prelude::pymodule]
+fn picoring(m: &pyo3::prelude::Bound<'_, pyo3::prelude::PyModule>) -> pyo3::prelude::PyResult<()> {
+    python::init_module(m)
+}
 
 #[cfg(test)]
 mod tests {

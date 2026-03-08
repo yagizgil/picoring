@@ -8,6 +8,9 @@ pub struct MirrorBuffer {
     size: usize,
 }
 
+unsafe impl Send for MirrorBuffer {}
+unsafe impl Sync for MirrorBuffer {}
+
 impl MirrorBuffer {
     // create a new mirrored buffer
     pub fn new(mut size: usize) -> Result<Self, String> {

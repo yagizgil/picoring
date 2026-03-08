@@ -18,13 +18,21 @@ fn scale_parameter_ergonomics_bench() {
             scale_label, items
         );
         println!("{:-<110}", "");
+        let format_time = |ns: f64| {
+            if ns < 1.0 {
+                format!("{:.0} ps", ns * 1000.0)
+            } else if ns < 1000.0 {
+                format!("{:.1} ns", ns)
+            } else if ns < 1_000_000.0 {
+                format!("{:.2} µs", ns / 1000.0)
+            } else {
+                format!("{:.2} ms", ns / 1_000_000.0)
+            }
+        };
+
         println!(
             "{:<20} | {:>18} | {:>18} | {:>18} | {:>18}",
-            "Config (N)",
-            "Access: get() (µs)",
-            "Access: [] (µs)",
-            "Iter: Manual (µs)",
-            "Iter: Iterator (µs)"
+            "Config (N)", "Access: get()", "Access: []", "Iter: Manual", "Iter: Iterator"
         );
         println!("{:-<110}", "");
 
@@ -48,19 +56,23 @@ fn scale_parameter_ergonomics_bench() {
             for &idx in &indices {
                 black_box(&vec[idx]);
             }
-            let vec_access = start.elapsed().as_micros();
+            let vec_access = start.elapsed().as_nanos() as f64 / indices.len() as f64;
 
             let start = Instant::now();
             let mut _sum = 0u64;
             for x in vec.iter().take(iter_limit) {
                 _sum += black_box(*x);
             }
-            let vec_iter = start.elapsed().as_micros();
+            let vec_iter = start.elapsed().as_nanos() as f64 / iter_limit as f64;
 
             println!("{:-<110}", "");
             println!(
                 "{:<20} | {:>18} | {:>18} | {:>18} | {:>18}",
-                "Std Vec Ref", "N/A", vec_access, "N/A", vec_iter
+                "Std Vec Ref",
+                "N/A",
+                format_time(vec_access),
+                "N/A",
+                format_time(vec_iter)
             );
         }
     }
@@ -77,13 +89,13 @@ fn run_scale<const N: usize>(items: usize, indices: &[usize], iter_limit: usize,
     for &idx in indices {
         black_box(list.get(idx));
     }
-    let manual_get = start.elapsed().as_micros();
+    let manual_get = start.elapsed().as_nanos() as f64 / indices.len() as f64;
 
     let start = Instant::now();
     for &idx in indices {
         black_box(&list[idx]);
     }
-    let ergonomic_index = start.elapsed().as_micros();
+    let ergonomic_index = start.elapsed().as_nanos() as f64 / indices.len() as f64;
 
     // Iteration benchmarks
     let start = Instant::now();
@@ -91,17 +103,33 @@ fn run_scale<const N: usize>(items: usize, indices: &[usize], iter_limit: usize,
     for i in 0..iter_limit {
         _sum += black_box(*list.get(i).unwrap());
     }
-    let manual_iter = start.elapsed().as_micros();
+    let manual_iter = start.elapsed().as_nanos() as f64 / iter_limit as f64;
 
     let start = Instant::now();
     let mut _sum = 0u64;
     for x in list.iter().take(iter_limit) {
         _sum += black_box(*x);
     }
-    let ergonomic_iter = start.elapsed().as_micros();
+    let ergonomic_iter = start.elapsed().as_nanos() as f64 / iter_limit as f64;
+
+    let format_time = |ns: f64| {
+        if ns < 1.0 {
+            format!("{:.0} ps", ns * 1000.0)
+        } else if ns < 1000.0 {
+            format!("{:.1} ns", ns)
+        } else if ns < 1_000_000.0 {
+            format!("{:.2} µs", ns / 1000.0)
+        } else {
+            format!("{:.2} ms", ns / 1_000_000.0)
+        }
+    };
 
     println!(
         "{:<20} | {:>18} | {:>18} | {:>18} | {:>18}",
-        label, manual_get, ergonomic_index, manual_iter, ergonomic_iter
+        label,
+        format_time(manual_get),
+        format_time(ergonomic_index),
+        format_time(manual_iter),
+        format_time(ergonomic_iter)
     );
 }
