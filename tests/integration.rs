@@ -3,14 +3,14 @@ use picoring::MirrorBuffer;
 
 #[test]
 fn test_hardware_mirroring() {
-    // Create a buffer with one page size (usually 4KB)
-    let mut buffer = MirrorBuffer::new(4096)
+    let ps = picoring::system::get_page_size();
+    let mut buffer = MirrorBuffer::new(ps)
         .expect("Failed to create MirrorBuffer. Ensure you have necessary OS permissions.");
 
     let slice = buffer.as_mut_slice();
     assert_eq!(
         slice.len(),
-        8192,
+        2 * ps,
         "Virtual address space should be twice the physical size"
     );
 
@@ -18,12 +18,13 @@ fn test_hardware_mirroring() {
     slice[0] = 42;
     // Should be reflected in the second half
     assert_eq!(
-        slice[4096], 42,
-        "Mirroring failed: Index 4096 does not match index 0"
+        slice[ps], 42,
+        "Mirroring failed: Index {} does not match index 0",
+        ps
     );
 
     // Writing to the second half
-    slice[4097] = 99;
+    slice[ps + 1] = 99;
     // Should be reflected in the first half
     assert_eq!(
         slice[1], 99,
@@ -61,16 +62,15 @@ fn test_pico_ring_basic_logic() {
 #[test]
 fn test_pico_ring_wrap_around_with_mirroring() {
     let mut ring = PicoRing::<u8>::with_capacity(4096).expect("Failed to create PicoRing");
-
+    let cap = ring.capacity();
     // Fill up to the end
-    for _ in 0..4095 {
+    for _ in 0..cap - 1 {
         ring.push(0);
     }
     // Need to pop at least 5 items to make space for 5 bytes
     for _ in 0..5 {
         ring.pop();
     }
-    // tail is now 6, head is 4095. available_space = 4096 - (4095 - 6) - 1 = 6.
 
     // Push across the boundary
     let data = [1, 2, 3, 4, 5];
@@ -80,7 +80,7 @@ fn test_pico_ring_wrap_around_with_mirroring() {
     );
 
     // Read them back (process skip the initial zeros we pushed)
-    for _ in 0..4090 {
+    for _ in 0..cap - 6 {
         ring.pop();
     }
 
@@ -93,9 +93,9 @@ fn test_pico_ring_wrap_around_with_mirroring() {
 
 #[test]
 fn test_pico_ring_static_capacity() {
-    // Test the new PicoRing::<u8, 8192>::new() syntax
+    let ps = picoring::system::get_page_size();
     let mut ring = PicoRing::<u8, 4096>::new().expect("Failed to create static PicoRing");
-    assert_eq!(ring.capacity(), 4096);
+    assert_eq!(ring.capacity(), ps);
 
     ring.push(10);
     assert_eq!(ring.pop(), Some(10));
