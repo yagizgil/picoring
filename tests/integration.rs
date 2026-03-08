@@ -1,5 +1,5 @@
-use picoring::MirrorBuffer;
 use picoring::ring::PicoRing;
+use picoring::MirrorBuffer;
 
 #[test]
 fn test_hardware_mirroring() {
@@ -39,19 +39,19 @@ fn test_pico_ring_basic_logic() {
     assert!(ring.is_empty());
     assert!(!ring.is_full());
 
-    // Test pushing items
-    for i in 0..9 {
-        assert!(ring.push(i), "Failed to push item {}", i);
+    // Test pushing items up to the actual capacity (might be larger than 10 due to page alignment)
+    let cap = ring.capacity();
+    for i in 0..cap - 1 {
+        assert!(ring.push(i as u32), "Failed to push item {}", i);
     }
 
-    // Ring should be full now (capacity - 1 for typical ring buffer implementation)
-    // Note: PicoRing seems to use (head + 1) % capacity == tail as is_full
+    // Ring should be full now
     assert!(ring.is_full());
     assert!(!ring.push(99));
 
     // Test popping items
-    for i in 0..9 {
-        assert_eq!(ring.pop(), Some(i));
+    for i in 0..cap - 1 {
+        assert_eq!(ring.pop(), Some(i as u32));
     }
 
     assert!(ring.is_empty());
@@ -66,7 +66,11 @@ fn test_pico_ring_wrap_around_with_mirroring() {
     for _ in 0..4095 {
         ring.push(0);
     }
-    ring.pop(); // tail is now 1, head is 4095
+    // Need to pop at least 5 items to make space for 5 bytes
+    for _ in 0..5 {
+        ring.pop();
+    }
+    // tail is now 6, head is 4095. available_space = 4096 - (4095 - 6) - 1 = 6.
 
     // Push across the boundary
     let data = [1, 2, 3, 4, 5];
@@ -75,8 +79,8 @@ fn test_pico_ring_wrap_around_with_mirroring() {
         "Failed to push slice across boundary"
     );
 
-    // Read them back
-    for _ in 0..4094 {
+    // Read them back (process skip the initial zeros we pushed)
+    for _ in 0..4090 {
         ring.pop();
     }
 
