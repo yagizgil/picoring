@@ -7,7 +7,7 @@ fn bench_read_performance(c: &mut Criterion) {
     let capacity = 100 * 1024 * 1024; // 100MB
 
     let mut ring = PicoRing::<u8>::with_capacity(capacity).unwrap();
-    let mut classic_vec = vec![0u8; capacity];
+    let classic_vec = vec![0u8; capacity];
 
     let test_sizes = [64, 4096, 65536, 1048576]; // 64B, 4KB, 64KB, 1MB
 

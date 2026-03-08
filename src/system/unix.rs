@@ -2,19 +2,15 @@ use core::ptr;
 use libc::*;
 
 pub unsafe fn allocate_mirror(size: usize) -> Result<*mut u8, String> {
-    // macos and modern linux differ in how they handle shared memory naming,
-    // for macos, we use an actual (though unique) name
-    #[cfg(target_os = "macos")]
-    let name = format!("/picoring_{}_{}", getpid(), ptr::null::<u8>() as usize);
-
-    // on linux we can often use anonymous objects, but for cross-unix compatibility,
-    // a named object in ram is safer
-    #[cfg(not(target_os = "macos"))]
-    let name_ptr = ptr::null();
-    #[cfg(target_os = "macos")]
-    let name_ptr = std::ffi::CString::new(name)
-        .map_err(|_| "invalid name")?
-        .as_ptr();
+    // Generate a unique name for the shared memory object
+    let name = format!(
+        "/picoring_{}_{}_{}",
+        getpid(),
+        ptr::null::<u8>() as usize,
+        size
+    );
+    let name_cstr = core::ffi::CString::new(name).map_err(|_| "invalid name")?;
+    let name_ptr = name_cstr.as_ptr();
 
     // create a shared memory object in ram,
     // we use O_CREAT | O_EXCL to ensure it's a new, unique object
@@ -83,7 +79,7 @@ pub unsafe fn allocate_mirror(size: usize) -> Result<*mut u8, String> {
     // this creates the mirror/repeating effect
     let m2 = mmap(
         // start immediately after the first view
-        target.add(size),
+        (target as *mut u8).add(size) as *mut c_void,
         // same size
         size,
         // same permissions
