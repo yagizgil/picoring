@@ -9,7 +9,7 @@ pub unsafe fn allocate_mirror(size: usize) -> Result<*mut u8, String> {
         ptr::null::<u8>() as usize,
         size
     );
-    let name_cstr = core::ffi::CString::new(name).map_err(|_| "invalid name")?;
+    let name_cstr = std::ffi::CString::new(name).map_err(|_| "invalid name")?;
     let name_ptr = name_cstr.as_ptr();
 
     // create a shared memory object in ram,
