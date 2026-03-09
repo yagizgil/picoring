@@ -3,11 +3,11 @@ use core::marker::PhantomData;
 use core::{ptr, slice};
 
 pub struct PicoRing<T, const N: usize = 0> {
-    buffer: MirrorBuffer,
-    head: usize,     // write position (measured in items of type T)
-    tail: usize,     // read position
-    capacity: usize, // how many items of type T fit (physical capacity)
-    mask: usize,     // capacity - 1 if it's a power of two, otherwise 0
+    pub(crate) buffer: MirrorBuffer,
+    pub(crate) head: usize,     // write position
+    pub(crate) tail: usize,     // read position
+    pub(crate) capacity: usize, // how many items of type T fit
+    pub(crate) mask: usize,     // capacity - 1 if it's a power of two
     _marker: PhantomData<T>,
 }
 

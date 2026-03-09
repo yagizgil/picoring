@@ -1,6 +1,7 @@
 pub mod buffer;
 pub mod collections;
 pub mod ring;
+pub mod spsc;
 pub mod system;
 
 #[cfg(feature = "python")]
@@ -9,6 +10,7 @@ pub mod python;
 pub use buffer::MirrorBuffer;
 pub use collections::{PicoByteStream, PicoList, PicoQueue};
 pub use ring::PicoRing;
+pub use spsc::{create_spsc, PicoConsumer, PicoProducer, PicoSPSC};
 
 #[cfg(feature = "python")]
 #[pyo3::prelude::pymodule]

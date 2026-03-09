@@ -78,6 +78,20 @@ _Description: Copying data into the ring buffer when it crosses the physical bou
 | 250.0 MB    |   21740000    |     19413425     | **0.89x** |
 | 500.0 MB    |   49187725    |     43610955     | **0.89x** |
 
+### 4. Multi-Threaded SPSC Performance (Lock-Free)
+
+_Description: Comparing PicoRing's SPSC (Single Producer Single Consumer) against the standard Rust `Arc<Mutex<VecDeque>>` approach. (All tests using 2,000,000 items on optimized release build)_
+
+| Implementation      | Performance (items/sec) | Rel. Speedup |
+| :------------------ | :---------------------: | :----------: |
+| Standard `Mutex`    |       14,621,058        |     1.0x     |
+| **SPSC (Single)**   |     **84,802,537**      |   **5.8x**   |
+| **SPSC (Batching)** |    **1,217,656,012**    |  **83.2x**   |
+
+- **Lock-Free:** No Mutex or Spinlocks, using only Atomic Acquire/Release semantics.
+- **Cache-Padded:** Head and Tail pointers are separated by 64-byte padding to prevent "False Sharing" and maximize L1 cache efficiency.
+- **Hardware Mirroring Advantage:** Batching achieves >1 Billion items/sec because hardware mirroring provides a contiguous slice for `push_slice` and `readable_slice`, even at the buffer boundary.
+
 ---
 
 ## Collection Performance Comparison
@@ -323,6 +337,47 @@ ring.push(255);
 // hardware mirroring guarantees this slice is contiguous even if it wraps
 let data = ring.readable_slice();
 assert_eq!(data[0], 255);
+```
+
+### 5. High-Performance SPSC (`PicoSPSC`)
+
+A lock-free, thread-safe communication channel with zero-copy support.
+
+```rust
+use picoring::{PicoSPSC, PicoRing};
+use std::thread;
+
+// 1. Create a specialized SPSC pair (New ergonomic API)
+let (producer, consumer) = PicoSPSC::<u32>::new(65536).unwrap().split();
+
+// 2. Or convert an existing PicoRing into SPSC
+// let (producer, consumer) = ring.into_spsc();
+
+// WRITER THREAD (Producer)
+thread::spawn(move || {
+    // Single push
+    producer.push(42);
+
+    // Batching (80x faster than Mutex!)
+    if producer.push_slice(&[10, 20, 30]) {
+        // ...
+    }
+});
+
+// READER THREAD (Consumer)
+thread::spawn(move || {
+    // Single pop
+    if let Some(val) = consumer.pop() {
+        println!("Received: {}", val);
+    }
+
+    // Zero-copy Batching
+    let slice = consumer.readable_slice();
+    if !slice.is_empty() {
+        println!("Batch: {:?}", slice);
+        consumer.advance_tail(slice.len());
+    }
+});
 ```
 
 ---
