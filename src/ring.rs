@@ -201,6 +201,14 @@ impl<T, const N: usize> PicoRing<T, N> {
             self.tail - self.head - 1
         }
     }
+
+    #[inline]
+    pub fn push_overwrite(&mut self, item: T) {
+        if self.is_full() {
+            self.pop();
+        }
+        self.push(item);
+    }
 }
 impl<T: Copy, const N: usize> PicoRing<T, N> {
     // pushes multiple items at once using hardware mirroring
