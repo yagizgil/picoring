@@ -18,7 +18,7 @@ Or add it manually to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-picoring = "0.5.0"
+picoring = "0.6.0"
 ```
 
 ---
@@ -78,9 +78,11 @@ _Description: Copying data into the ring buffer when it crosses the physical bou
 | 250.0 MB    |   21740000    |     19413425     | **0.89x** |
 | 500.0 MB    |   49187725    |     43610955     | **0.89x** |
 
-### 4. Multi-Threaded SPSC Performance (Lock-Free)
+### 4. Multi-Threaded Performance (SPSC & MPSC)
 
-_Description: Comparing PicoRing's SPSC (Single Producer Single Consumer) against the standard Rust `Arc<Mutex<VecDeque>>` approach. (All tests using 2,000,000 items on optimized release build)_
+_Description: Comparing PicoRing's multi-threaded variants against standard Rust alternatives. (All tests using 2,000,000 items, release build)_
+
+#### SPSC (Single-Producer Single-Consumer)
 
 | Implementation      | Performance (items/sec) | Rel. Speedup |
 | :------------------ | :---------------------: | :----------: |
@@ -88,9 +90,20 @@ _Description: Comparing PicoRing's SPSC (Single Producer Single Consumer) agains
 | **SPSC (Single)**   |     **84,802,537**      |   **5.8x**   |
 | **SPSC (Batching)** |    **1,217,656,012**    |  **83.2x**   |
 
-- **Lock-Free:** No Mutex or Spinlocks, using only Atomic Acquire/Release semantics.
-- **Cache-Padded:** Head and Tail pointers are separated by 64-byte padding to prevent "False Sharing" and maximize L1 cache efficiency.
-- **Hardware Mirroring Advantage:** Batching achieves >1 Billion items/sec because hardware mirroring provides a contiguous slice for `push_slice` and `readable_slice`, even at the buffer boundary.
+#### MPSC (Multi-Producer Single-Consumer)
+
+_Test setup: 4 producers sending to 1 consumer._
+
+| Implementation           | Performance (items/sec) | Rel. Speedup |
+| :----------------------- | :---------------------: | :----------: |
+| Standard `Mutex`         |        3,137,244        |     1.0x     |
+| `std::sync::mpsc`        |        8,749,281        |     2.8x     |
+| **PicoMPSC (Single)**    |      **8,833,329**      |   **2.8x**   |
+| **PicoMPSC (Batching!)** |     **456,850,472**     |  **145.6x**  |
+
+- **Lock-Free / Wait-Free:** No Mutex or Spinlocks for SPSC. MPSC uses lock-free reservations with a tiny spin-wait only during the final commit to ensure FIFO consistency.
+- **Cache-Padded (64-byte alignment):** Head, Tail, and Commit pointers are aligned to 64-byte boundaries (CPU cache line size). This prevents **False Sharing**, allowing threads to update pointers on different cores without cache-line contention.
+- **Hardware Mirroring Advantage:** Zero-copy batching achieves >1 Billion items/sec because hardware mirroring provides a contiguous slice for `push_slice` and `readable_slice`, even at the physical buffer boundary.
 
 ---
 
@@ -339,19 +352,18 @@ let data = ring.readable_slice();
 assert_eq!(data[0], 255);
 ```
 
-### 5. High-Performance SPSC (`PicoSPSC`)
+### 5. High-Performance Multi-Threaded Channels
 
-A lock-free, thread-safe communication channel with zero-copy support.
+#### SPSC (Single Producer Single Consumer)
+
+Lock-free, cache-padded, and optimized for maximum point-to-point throughput.
 
 ```rust
-use picoring::{PicoSPSC, PicoRing};
+use picoring::PicoSPSC;
 use std::thread;
 
-// 1. Create a specialized SPSC pair (New ergonomic API)
+// Create a specialized SPSC pair
 let (producer, consumer) = PicoSPSC::<u32>::new(65536).unwrap().split();
-
-// 2. Or convert an existing PicoRing into SPSC
-// let (producer, consumer) = ring.into_spsc();
 
 // WRITER THREAD (Producer)
 thread::spawn(move || {
@@ -359,9 +371,7 @@ thread::spawn(move || {
     producer.push(42);
 
     // Batching (80x faster than Mutex!)
-    if producer.push_slice(&[10, 20, 30]) {
-        // ...
-    }
+    producer.push_slice(&[10, 20, 30]);
 });
 
 // READER THREAD (Consumer)
@@ -371,13 +381,34 @@ thread::spawn(move || {
         println!("Received: {}", val);
     }
 
-    // Zero-copy Batching
+    // Zero-copy Batching (Contiguous even at boundary!)
     let slice = consumer.readable_slice();
     if !slice.is_empty() {
         println!("Batch: {:?}", slice);
         consumer.advance_tail(slice.len());
     }
 });
+```
+
+#### MPSC (Multi-Producer Single Consumer)
+
+Scale your throughput with multiple writers and an ordered lock-free consumer.
+
+```rust
+use picoring::create_mpsc;
+let (producer, consumer) = create_mpsc::<u32>(65536).unwrap();
+
+// Multiple threads can clone and use the same producer
+for i in 0..4 {
+    let p = producer.clone();
+    thread::spawn(move || {
+        p.push_slice(&[i; 64]); // Massive performance with slices
+    });
+}
+
+// Single consumer reads from all
+let slice = consumer.readable_slice();
+consumer.advance_tail(slice.len());
 ```
 
 ---

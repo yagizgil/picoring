@@ -8,7 +8,7 @@ use std::sync::Arc;
 // this prevents "false sharing" where the head and tail pointers
 // reside in the same CPU cache line, significantly boosting performance.
 #[repr(align(64))]
-struct PaddedAtomic(AtomicUsize);
+pub(crate) struct PaddedAtomic(pub(crate) AtomicUsize);
 
 impl core::ops::Deref for PaddedAtomic {
     type Target = AtomicUsize;
@@ -18,18 +18,18 @@ impl core::ops::Deref for PaddedAtomic {
 }
 
 // core state shared between the producer and the consumer.
-struct SharedState<T> {
+pub(crate) struct SharedState<T> {
     // the virtual memory mirrored buffer.
-    buffer: MirrorBuffer,
+    pub(crate) buffer: MirrorBuffer,
     // write index, owned/updated by the producer.
-    head: PaddedAtomic,
+    pub(crate) head: PaddedAtomic,
     // read index, owned/updated by the consumer.
-    tail: PaddedAtomic,
+    pub(crate) tail: PaddedAtomic,
     // maximum number of items the buffer can hold.
-    capacity: usize,
+    pub(crate) capacity: usize,
     // bitmask for fast wrapping (if capacity is a power of two).
-    mask: usize,
-    _marker: PhantomData<T>,
+    pub(crate) mask: usize,
+    pub(crate) _marker: PhantomData<T>,
 }
 
 unsafe impl<T: Send> Send for SharedState<T> {}
@@ -306,6 +306,26 @@ impl<T, const N: usize> crate::ring::PicoRing<T, N> {
                 shared: shared.clone(),
             },
             PicoConsumer { shared },
+        )
+    }
+
+    // converts an existing PicoRing into its MPSC counterparts.
+    pub fn into_mpsc(self) -> (crate::mpsc::PicoMpscProducer<T>, crate::mpsc::PicoMpscConsumer<T>) {
+        let shared = Arc::new(crate::mpsc::SharedState {
+            buffer: self.buffer,
+            head: crate::mpsc::PaddedAtomic(AtomicUsize::new(self.head)),
+            tail: crate::mpsc::PaddedAtomic(AtomicUsize::new(self.tail)),
+            commit: crate::mpsc::PaddedAtomic(AtomicUsize::new(self.head)),
+            capacity: self.capacity,
+            mask: self.mask,
+            _marker: PhantomData,
+        });
+
+        (
+            crate::mpsc::PicoMpscProducer {
+                shared: shared.clone(),
+            },
+            crate::mpsc::PicoMpscConsumer { shared },
         )
     }
 }
