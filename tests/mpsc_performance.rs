@@ -51,7 +51,10 @@ fn compare_mpsc_performance() {
     const ITEMS_PER_PROD: u32 = TOTAL_ITEMS / NUM_PRODUCERS;
     const CAP: usize = 65536;
 
-    println!("\n--- MPSC Performance Comparison ({} producers, {} items) ---", NUM_PRODUCERS, TOTAL_ITEMS);
+    println!(
+        "\n--- MPSC Performance Comparison ({} producers, {} items) ---",
+        NUM_PRODUCERS, TOTAL_ITEMS
+    );
 
     // 1. Arc<Mutex<VecDeque>>
     let queue = Arc::new(Mutex::new(VecDeque::with_capacity(CAP)));
@@ -90,7 +93,9 @@ fn compare_mpsc_performance() {
             }
         });
 
-        for p in producers { p.join().unwrap(); }
+        for p in producers {
+            p.join().unwrap();
+        }
         t_cons.join().unwrap();
     }
     let mutex_duration = start.elapsed();
@@ -109,7 +114,7 @@ fn compare_mpsc_performance() {
                 }
             }));
         }
-        drop(tx); // Close original tx
+        drop(tx);
 
         let t_cons = thread::spawn(move || {
             let mut count = 0;
@@ -120,7 +125,9 @@ fn compare_mpsc_performance() {
             count
         });
 
-        for p in producers { p.join().unwrap(); }
+        for p in producers {
+            p.join().unwrap();
+        }
         t_cons.join().unwrap();
     }
     let std_mpsc_duration = start.elapsed();
@@ -152,7 +159,9 @@ fn compare_mpsc_performance() {
             }
         });
 
-        for p in producers { p.join().unwrap(); }
+        for p in producers {
+            p.join().unwrap();
+        }
         t_cons.join().unwrap();
     }
     let pico_mpsc_duration = start.elapsed();
@@ -191,7 +200,9 @@ fn compare_mpsc_performance() {
             }
         });
 
-        for p in producers { p.join().unwrap(); }
+        for p in producers {
+            p.join().unwrap();
+        }
         t_cons.join().unwrap();
     }
     let pico_batch_duration = start.elapsed();

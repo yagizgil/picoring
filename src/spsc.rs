@@ -310,7 +310,12 @@ impl<T, const N: usize> crate::ring::PicoRing<T, N> {
     }
 
     // converts an existing PicoRing into its MPSC counterparts.
-    pub fn into_mpsc(self) -> (crate::mpsc::PicoMpscProducer<T>, crate::mpsc::PicoMpscConsumer<T>) {
+    pub fn into_mpsc(
+        self,
+    ) -> (
+        crate::mpsc::PicoMpscProducer<T>,
+        crate::mpsc::PicoMpscConsumer<T>,
+    ) {
         let shared = Arc::new(crate::mpsc::SharedState {
             buffer: self.buffer,
             head: crate::mpsc::PaddedAtomic(AtomicUsize::new(self.head)),
